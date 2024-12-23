@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
-import { User } from '../types/user';
+"use client";
+
+import { supabase } from "@/lib/supabaseClient";
+import { User } from "@/types/user";
+import { useEffect, useState } from "react";
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -11,7 +13,13 @@ export function useAuth() {
         data: { session },
       } = await supabase.auth.getSession();
       if (session) {
-        setUser(session.user as User);
+        const supabaseUser = session.user;
+        const customUser: User = {
+          id: supabaseUser.id,
+          username: supabaseUser.user_metadata?.username || "",
+          avatarUrl: supabaseUser.user_metadata?.avatar_url || "",
+        };
+        setUser(customUser);
       }
     };
     checkSession();

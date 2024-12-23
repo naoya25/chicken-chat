@@ -7,7 +7,11 @@ export default function UserInfo() {
 
   return (
     <div>
-      {user ? <p>Welcome, {user.email}</p> : <p>Loading user information...</p>}
+      {user && user.username !== "" ? (
+        <p>Welcome, {user.username}</p>
+      ) : (
+        <p>Loading user information...</p>
+      )}
     </div>
   );
 }

@@ -16,6 +16,7 @@ export function useAuth() {
         const supabaseUser = session.user;
         const customUser: User = {
           id: supabaseUser.id,
+          email: supabaseUser.email || "",
           username: supabaseUser.user_metadata?.username || "",
           avatarUrl: supabaseUser.user_metadata?.avatar_url || "",
         };

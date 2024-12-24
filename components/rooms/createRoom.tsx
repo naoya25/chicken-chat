@@ -22,41 +22,33 @@ export default function CreateRoom() {
       return;
     }
 
-    // 新しいルームを作成し、creator_idを設定
     const { data, error } = await supabase
       .from("rooms")
-      .insert([
-        {
-          name: roomName.trim(),
-          creator_id: user.id,
-        },
-      ])
+      .insert({
+        name: roomName.trim(),
+        creator_id: user.id,
+      })
       .select();
 
     if (error) {
-      console.error("ルーム作成エラー:", error.message);
       alert("ルーム作成に失敗しました: " + error.message);
       return;
     }
 
+    console.log(data);
+
     const newRoom = data?.[0];
-    if (newRoom) {
-      // 作成者をroom_usersテーブルに追加
-      const { error: joinError } = await supabase.from("room_users").insert([
-        {
-          room_id: newRoom.id,
-          user_id: user.id,
-        },
-      ]);
+    const { error: joinError } = await supabase.from("room_users").insert({
+      room_id: newRoom.id,
+      user_id: user.id,
+    });
 
-      if (joinError) {
-        console.error("ルーム参加エラー:", joinError.message);
-        alert("ルーム参加に失敗しました: " + joinError.message);
-      }
-
-      // 新しいルームページにリダイレクト
-      router.push(`/rooms/${newRoom.id}`);
+    if (joinError) {
+      console.error("ルーム参加エラー:", joinError.message);
+      alert("ルーム参加に失敗しました: " + joinError.message);
     }
+
+    router.push(`/rooms/${newRoom.id}`);
   };
 
   return (

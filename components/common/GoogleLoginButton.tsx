@@ -26,7 +26,7 @@ export default function GoogleLoginButton() {
           }
 
           if (!existingUser) {
-            const { error: insertError } = await supabase.from("users").insert({
+            const { error: insertError } = await supabase.from("users").upsert({
               id: user.id,
               email: user.email,
               username: user.user_metadata.full_name || user.email,

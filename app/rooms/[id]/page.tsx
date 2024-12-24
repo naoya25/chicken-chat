@@ -24,26 +24,47 @@ export default function RoomPage() {
     async function fetchRoomInfo() {
       const { data, error } = await supabase
         .from("rooms")
-        .select(
-          `
-          id,
-          name,
-          created_at,
-          creator:users(id, username, avatar_url),
-          room_users:user(id, username, avatar_url)
-        `
-        )
+        .select("*")
         .eq("id", roomId)
         .single();
 
       if (error) {
         console.error("ルーム情報取得エラー:", error.message);
         alert("ルーム情報の取得に失敗しました: " + error.message);
-        router.push("/rooms");
+        // router.push("/rooms");
         return;
       }
-
       if (data) {
+        const roomsWithParticipants = await Promise.all(
+          roomsData.map(async (room) => {
+            const { data: creatorData, error: creatorError } = await supabase
+              .from("users")
+              .select("id, username, avatar_url")
+              .eq("id", room.creator_id)
+              .single();
+
+            if (creatorError) {
+              return { ...room, creator: null };
+            }
+
+            const { data: participantsData, error: participantsError } =
+              await supabase
+                .from("room_users")
+                .select("users(id, username, avatar_url)")
+                .eq("room_id", room.id);
+
+            if (participantsError) {
+              return { ...room, participants: [] };
+            }
+
+            return {
+              ...room,
+              creator: creatorData,
+              participants: participantsData.map((ru) => ru.users),
+            };
+          })
+        );
+
         const roomInfo: Room = {
           id: data.id,
           name: data.name,
@@ -65,7 +86,7 @@ export default function RoomPage() {
       const isParticipant = room.participants?.some((p) => p.id === user.id);
       if (!isParticipant) {
         alert("このルームに参加していません。");
-        router.push("/rooms");
+        // router.push("/rooms");
       }
     }
   }, [user, room, router]);

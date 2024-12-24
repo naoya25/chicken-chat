@@ -13,29 +13,48 @@ function RoomList() {
 
   useEffect(() => {
     async function fetchRooms() {
-      const { data, error } = await supabase
+      const { data: roomsData, error: roomsError } = await supabase
         .from("rooms")
-        .select(
-          `
-        *,
-        users:creator_id(id, username, avatar_url),
-        participants:user_participants(id, username, avatar_url)
-      `
-        )
+        .select("*")
         .order("created_at", { ascending: false });
 
-      if (error) {
-        console.error("ルーム取得エラー:", error.message);
+      if (roomsError) {
+        console.error("ルーム取得エラー:", roomsError.message);
         return;
       }
 
-      if (data) {
-        const formattedRooms = data.map((room) => ({
-          ...room,
-          creator: room.creator,
-          participants: room.participants,
-        }));
-        setRooms(formattedRooms);
+      if (roomsData) {
+        const roomsWithParticipants = await Promise.all(
+          roomsData.map(async (room) => {
+            const { data: creatorData, error: creatorError } = await supabase
+              .from("users")
+              .select("id, username, avatar_url")
+              .eq("id", room.creator_id)
+              .single();
+
+            if (creatorError) {
+              return { ...room, creator: null };
+            }
+
+            const { data: participantsData, error: participantsError } =
+              await supabase
+                .from("room_users")
+                .select("users(id, username, avatar_url)")
+                .eq("room_id", room.id);
+
+            if (participantsError) {
+              return { ...room, participants: [] };
+            }
+
+            return {
+              ...room,
+              creator: creatorData,
+              participants: participantsData.map((ru) => ru.users),
+            };
+          })
+        );
+
+        setRooms(roomsWithParticipants);
       }
     }
     fetchRooms();

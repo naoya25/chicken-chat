@@ -1,9 +1,8 @@
 {
-  "cSpell.words": ["supabase", "vercel"],
+  "cSpell.words": ["PGRST", "supabase", "vercel"],
   "editor.tabSize": 2,
   "editor.insertSpaces": true,
   "files.associations": {
     "*.css": "tailwindcss"
   }
 }
-// Start Generation Here

@@ -1,8 +1,7 @@
 import AuthRedirectComponent from "@/components/common/AuthRedirectComponent";
-import RoomList from "@/components/rooms/RoomList";
 import LogoutButton from "@/components/common/LogoutButton";
 import UserInfo from "@/components/common/UserInfo";
-
+import RoomList from "@/components/rooms/roomList";
 function RoomsPage() {
   return (
     <div>

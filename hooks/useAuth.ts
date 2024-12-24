@@ -9,18 +9,26 @@ export function useAuth() {
 
   useEffect(() => {
     const checkSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (session) {
-        const supabaseUser = session.user;
-        const customUser: User = {
-          id: supabaseUser.id,
-          email: supabaseUser.email || "",
-          username: supabaseUser.user_metadata?.username || "",
-          avatarUrl: supabaseUser.user_metadata?.avatar_url || "",
-        };
-        setUser(customUser);
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (session) {
+          const supabaseUser = session.user;
+          const { data: userData, error } = await supabase
+            .from("users")
+            .select("*")
+            .eq("id", supabaseUser.id)
+            .single();
+          if (error) {
+            throw new Error(
+              `useAuth::checkSession::supabase.from('users').select: ${error.message}`
+            );
+          }
+          setUser(userData as User);
+        }
+      } catch (error) {
+        console.error(error);
       }
     };
     checkSession();

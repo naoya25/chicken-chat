@@ -1,4 +1,11 @@
+import { Room } from "./room";
+import { User } from "./user";
+
 export interface Message {
-    timestamp: number;
-    // Add other properties of the message as needed
+  id: string;
+  room: Room;
+  sender: User;
+  content: string;
+  createdAt: Date;
+  expiresAt?: Date;
 }

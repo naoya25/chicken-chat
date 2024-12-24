@@ -10,18 +10,18 @@ export default function GoogleLoginButton() {
         if (session) {
           const { user } = session;
 
-          // Check if the user already exists
           const { data: existingUser, error: fetchError } = await supabase
             .from("users")
             .select("id")
             .eq("id", user.id)
-            .single();
+            .maybeSingle();
 
           if (fetchError) {
-            console.error(
-              `handleGoogleLogin: Error fetching user from database - ${fetchError.message}`
+            console.error('fetchError details:', fetchError);
+            alert(
+              "データベースからユーザーを取得中にエラーが発生しました: " +
+                fetchError.message
             );
-            alert("Error fetching user from database: " + fetchError.message);
             return;
           }
 
@@ -34,10 +34,10 @@ export default function GoogleLoginButton() {
             });
 
             if (insertError) {
-              console.error(
-                `handleGoogleLogin: Error inserting user into database - ${insertError.message}`
+              alert(
+                "データベースにユーザーを挿入中にエラーが発生しました: " +
+                  insertError.message
               );
-              alert("Error inserting user into database: " + insertError.message);
             }
           }
         }
@@ -56,12 +56,12 @@ export default function GoogleLoginButton() {
       });
       if (error) {
         throw new Error(
-          `handleGoogleLogin: Error logging in with Google - ${error.message}`
+          `handleGoogleLogin: Googleでのログイン中にエラーが発生しました - ${error.message}`
         );
       }
     } catch (error) {
       console.error(error);
-      alert("Authentication failed: " + error);
+      alert("認証に失敗しました: " + error);
     }
   };
 
@@ -70,7 +70,7 @@ export default function GoogleLoginButton() {
       onClick={handleGoogleLogin}
       className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
     >
-      Login with Google
+      Googleでログイン
     </button>
   );
 }

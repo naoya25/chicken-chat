@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { User } from "@/types/user";
 import { useEffect, useState } from "react";
 
-export function useAuth() {
+export function useAuth(): User | null {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
@@ -25,13 +25,28 @@ export function useAuth() {
               `useAuth::checkSession::supabase.from('users').select: ${error.message}`
             );
           }
-          setUser(userData as User);
+          setUser(userData);
         }
       } catch (error) {
-        console.error(error);
+        console.error("Authentication error:", error);
+        setUser(null);
       }
     };
     checkSession();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === "SIGNED_IN" && session) {
+          checkSession();
+        } else if (event === "SIGNED_OUT") {
+          setUser(null);
+        }
+      }
+    );
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
   return user;

@@ -1,6 +1,6 @@
-export interface User {
-  id: string;
-  email: string;
-  username: string;
-  avatarUrl: string;
-}
+import { Database } from "./database";
+
+export type User = Database["public"]["Tables"]["users"]["Row"];
+
+export type UserInsert = Database["public"]["Tables"]["users"]["Insert"];
+export type UserUpdate = Database["public"]["Tables"]["users"]["Update"];

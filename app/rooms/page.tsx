@@ -4,6 +4,7 @@ import UserInfo from "@/components/common/UserInfo";
 import RoomList from "@/components/rooms/roomList";
 import CreateRoom from "@/components/rooms/createRoom";
 
+/// ルーム一覧ページ
 function RoomsPage() {
   return (
     <div>

@@ -5,18 +5,19 @@ import { useAuth } from "@/hooks/useAuth";
 import ChatInput from "@/components/common/ChatInput";
 import { supabase } from "@/lib/supabaseClient";
 import { useEffect, useState } from "react";
-import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import useRealtimeMessages from "@/hooks/useRealtimeMessages";
 import { Room } from "@/types/room";
 import { Message } from "@/types/message";
+import { User } from "@/types/user";
 
+/// ルーム詳細ページ
 export default function RoomPage() {
-  useAuthRedirect();
   const router = useRouter();
   const params = useParams();
   const roomId = params.id as string;
   const user = useAuth();
-  const messages = useRealtimeMessages(roomId);
+  const { messages, sendMessage: realtimeSendMessage } =
+    useRealtimeMessages(roomId);
   const [room, setRoom] = useState<Room | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -31,47 +32,58 @@ export default function RoomPage() {
       if (error) {
         console.error("ルーム情報取得エラー:", error.message);
         alert("ルーム情報の取得に失敗しました: " + error.message);
-        // router.push("/rooms");
+        router.push("/");
         return;
       }
       if (data) {
-        const roomsWithParticipants = await Promise.all(
-          roomsData.map(async (room) => {
-            const { data: creatorData, error: creatorError } = await supabase
-              .from("users")
-              .select("id, username, avatar_url")
-              .eq("id", room.creator_id)
-              .single();
+        const room = data as Room;
 
-            if (creatorError) {
-              return { ...room, creator: null };
-            }
+        const { data: creatorData, error: creatorError } = await supabase
+          .from("users")
+          .select("id, username, avatar_url")
+          .eq("id", room.creator?.id)
+          .single();
 
-            const { data: participantsData, error: participantsError } =
-              await supabase
-                .from("room_users")
-                .select("users(id, username, avatar_url)")
-                .eq("room_id", room.id);
+        const { data: participantsData, error: participantsError } =
+          await supabase
+            .from("room_users")
+            .select("user_id")
+            .eq("room_id", room.id);
 
-            if (participantsError) {
-              return { ...room, participants: [] };
-            }
+        let participants: User[] = [];
 
-            return {
-              ...room,
-              creator: creatorData,
-              participants: participantsData.map((ru) => ru.users),
-            };
-          })
-        );
+        if (!participantsError && participantsData.length > 0) {
+          const userIds = participantsData.map((p) => p.user_id);
+          const { data: usersData } = await supabase
+            .from("users")
+            .select("id, username, avatar_url")
+            .in("id", userIds);
+
+          if (usersData) {
+            participants = usersData.map((u) => ({
+              id: u.id,
+              username: u.username,
+              email: "",
+              avatar_url: u.avatar_url,
+            })) as User[];
+          }
+        }
 
         const roomInfo: Room = {
-          id: data.id,
-          name: data.name,
-          createdAt: data.created_at,
-          creator: undefined,
-          participants: undefined,
+          id: room.id,
+          name: room.name,
+          createdAt: room.createdAt,
+          creator: creatorError
+            ? undefined
+            : ({
+                id: creatorData.id,
+                username: creatorData.username,
+                email: "",
+                avatar_url: creatorData.avatar_url,
+              } as User),
+          participants: participants,
         };
+
         setRoom(roomInfo);
       }
 
@@ -86,7 +98,7 @@ export default function RoomPage() {
       const isParticipant = room.participants?.some((p) => p.id === user.id);
       if (!isParticipant) {
         alert("このルームに参加していません。");
-        // router.push("/rooms");
+        router.push("/");
       }
     }
   }, [user, room, router]);
@@ -97,18 +109,7 @@ export default function RoomPage() {
       return;
     }
 
-    const { error } = await supabase.from("messages").insert([
-      {
-        room_id: roomId,
-        user_id: user.id,
-        content: content,
-      },
-    ]);
-
-    if (error) {
-      console.error("メッセージ送信エラー:", error.message);
-      alert("メッセージ送信に失敗しました: " + error.message);
-    }
+    await realtimeSendMessage(content, user.id);
   };
 
   if (loading || !room) {

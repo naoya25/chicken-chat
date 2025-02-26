@@ -43,9 +43,9 @@ export default function MessagesList({ messages }: MessagesListProps) {
         const user = users[message.sender.id];
         return (
           <div key={message.id} className="flex items-start space-x-2">
-            {user?.avatarUrl && (
+            {user?.avatar_url && (
               <Image
-                src={user.avatarUrl}
+                src={user.avatar_url}
                 alt={`${user.username}のアバター`}
                 width={40}
                 height={40}

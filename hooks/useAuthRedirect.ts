@@ -12,8 +12,8 @@ export const useAuthRedirect = () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      if (session) {
-        router.push("/rooms");
+      if (!session) {
+        router.push("/login");
       }
     };
     checkSession();

@@ -12,3 +12,11 @@ export interface Room {
   creator?: User;
   participants?: User[];
 }
+
+
+export interface SupabaseRoom {
+  id: string;
+  name: string;
+  creator_id: string;
+  created_at: string;
+}

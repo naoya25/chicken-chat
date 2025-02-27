@@ -1,15 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
-import { Message } from "../types/message";
+import { Message, SupabaseMessage } from "../types/message";
 import { supabase } from "@/lib/supabaseClient";
-
-// Supabaseから取得するメッセージの型定義
-interface SupabaseMessage {
-  id: string;
-  content: string;
-  room_id: string;
-  user_id: string;
-  created_at: string;
-}
 
 // Supabaseのメッセージをアプリケーションのメッセージ型に変換する関数
 function mapSupabaseMessageToMessage(
@@ -114,6 +105,13 @@ function useRealtimeMessages(roomId: string) {
 
     console.log(`Setting up realtime subscription for room: ${roomId}`);
 
+    // リアルタイム接続状態を確認
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log(`Auth event: ${event}`, session);
+    });
+
     // リアルタイムでメッセージを購読
     const channelName = `room_messages_${roomId}`;
 
@@ -131,23 +129,29 @@ function useRealtimeMessages(roomId: string) {
       const channel = supabase
         .channel(channelName, {
           config: {
-            broadcast: { self: false },
+            broadcast: { self: true },
+            presence: { key: roomId },
           },
         })
         .on(
           "postgres_changes",
           {
-            event: "INSERT",
+            event: "*",
             schema: "public",
             table: "messages",
             filter: `room_id=eq.${roomId}`,
           },
           async (payload) => {
-            console.log("New message received:", payload);
+            console.log("Message event received:", payload);
+
+            if (payload.eventType !== "INSERT") {
+              console.log(`Ignoring non-INSERT event: ${payload.eventType}`);
+              return;
+            }
+
             const newMessage = payload.new as SupabaseMessage;
 
             try {
-              // ユーザー情報を取得
               const { data: userData, error } = await supabase
                 .from("users")
                 .select("id, username, avatar_url")
@@ -156,34 +160,40 @@ function useRealtimeMessages(roomId: string) {
 
               if (error) {
                 console.error("ユーザー情報の取得エラー:", error.message);
-                // ユーザー情報なしでメッセージを追加
                 const messageWithoutUser =
                   mapSupabaseMessageToMessage(newMessage);
 
-                // 重複を避けるためにIDをチェック
                 setMessages((prev) => {
-                  // 既に同じIDのメッセージがあれば追加しない
                   if (prev.some((msg) => msg.id === messageWithoutUser.id)) {
+                    console.log(
+                      `Duplicate message detected, not adding: ${messageWithoutUser.id}`
+                    );
                     return prev;
                   }
+                  console.log(
+                    `Adding new message from user ${newMessage.user_id}: ${messageWithoutUser.id}`
+                  );
                   return [...prev, messageWithoutUser];
                 });
                 return;
               }
 
-              // メッセージにユーザー情報を追加
               const messageWithUser = mapSupabaseMessageToMessage(
                 newMessage,
                 userData.username,
                 userData.avatar_url
               );
 
-              // 重複を避けるためにIDをチェック
               setMessages((prev) => {
-                // 既に同じIDのメッセージがあれば追加しない
                 if (prev.some((msg) => msg.id === messageWithUser.id)) {
+                  console.log(
+                    `Duplicate message detected, not adding: ${messageWithUser.id}`
+                  );
                   return prev;
                 }
+                console.log(
+                  `Adding new message from user ${userData.username}: ${messageWithUser.id}`
+                );
                 return [...prev, messageWithUser];
               });
             } catch (error) {
@@ -191,16 +201,22 @@ function useRealtimeMessages(roomId: string) {
             }
           }
         )
+        .on("presence", { event: "sync" }, () => {
+          console.log("Presence synchronized");
+        })
+        .on("presence", { event: "join" }, ({ newPresences }) => {
+          console.log("User(s) joined:", newPresences);
+        })
+        .on("presence", { event: "leave" }, ({ leftPresences }) => {
+          console.log("User(s) left:", leftPresences);
+        })
         .subscribe((status) => {
           console.log(`Subscription status for room ${roomId}: ${status}`);
           if (status === "SUBSCRIBED") {
-            console.log("Successfully subscribed to channel");
-            retryCount = 0; // リセット
+            retryCount = 0;
           } else if (status === "CLOSED" || status === "CHANNEL_ERROR") {
-            console.error(`Failed to subscribe to channel: ${status}`);
             retryCount++;
 
-            // 少し待ってから再試行
             setTimeout(() => {
               console.log("Retrying subscription...");
               setupSubscription();
@@ -208,18 +224,18 @@ function useRealtimeMessages(roomId: string) {
           }
         });
 
-      // クリーンアップ関数を返す
       return () => {
         console.log(`Unsubscribing from room: ${roomId}`);
         channel.unsubscribe();
       };
     };
 
-    // 初回購読設定
     const cleanup = setupSubscription();
 
-    // コンポーネントのアンマウント時にクリーンアップ
-    return cleanup;
+    return () => {
+      if (cleanup) cleanup();
+      if (subscription) subscription.unsubscribe();
+    };
   }, [roomId, fetchMessages]);
 
   // メッセージ送信機能

@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
+// Googleでログインするボタンを表示するコンポーネント
 export default function GoogleLoginButton() {
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(

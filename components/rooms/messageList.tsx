@@ -6,11 +6,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import Image from "next/image";
 
-interface MessagesListProps {
-  messages: Message[];
-}
-
-export default function MessagesList({ messages }: MessagesListProps) {
+export default function MessagesList({ messages }: { messages: Message[] }) {
   const [users, setUsers] = useState<{ [key: string]: User }>({});
 
   useEffect(() => {

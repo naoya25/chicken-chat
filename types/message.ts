@@ -17,3 +17,11 @@ export interface Message
   createdAt: Date;
   expiresAt?: Date;
 }
+
+export interface SupabaseMessage {
+  id: string;
+  content: string;
+  room_id: string;
+  user_id: string;
+  created_at: string;
+}

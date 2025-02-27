@@ -1,4 +1,3 @@
-import AuthRedirectComponent from "@/components/common/AuthRedirectComponent";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -6,8 +5,6 @@ import Image from "next/image";
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
-      <AuthRedirectComponent />
-
       {/* Hero Section */}
       <div className="relative overflow-hidden pt-16 pb-24">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">

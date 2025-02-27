@@ -1,8 +1,8 @@
 import AuthRedirectComponent from "@/components/common/AuthRedirectComponent";
 import LogoutButton from "@/components/common/LogoutButton";
 import UserInfo from "@/components/common/UserInfo";
-import RoomList from "@/components/rooms/roomList";
-import CreateRoom from "@/components/rooms/createRoom";
+import CreateRoom from "@/components/rooms/CreateRoom";
+import RoomList from "@/components/rooms/RoomList";
 import Link from "next/link";
 
 /// ルーム一覧ページ

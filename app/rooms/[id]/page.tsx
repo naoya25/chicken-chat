@@ -25,7 +25,6 @@ export default function RoomPage() {
   const { room, loading: roomLoading, error: roomError } = useRoom(roomId);
 
   const messagesEndRef = useScrollToBottom<HTMLDivElement>({
-    dependencies: [messages, roomLoading, messagesLoading],
     smoothOnMount: false,
   });
 

@@ -1,14 +1,11 @@
 import { useEffect, useRef, RefObject } from "react";
 
 interface ScrollToBottomProps {
-  // 新しいメッセージやローディング状態が変化したときに再スクロールするための依存配列
-  dependencies: any[];
   // 初回読み込み時はスムーズスクロールではなく即座にスクロールするかどうか
   smoothOnMount?: boolean;
 }
 
 export function useScrollToBottom<T extends HTMLElement>({
-  dependencies,
   smoothOnMount = false,
 }: ScrollToBottomProps): RefObject<T> {
   const endRef = useRef<T>(null);
@@ -22,7 +19,7 @@ export function useScrollToBottom<T extends HTMLElement>({
       endRef.current.scrollIntoView({ behavior });
       isFirstRender.current = false;
     }
-  }, dependencies);
+  }, [smoothOnMount]);
 
-  return endRef;
+  return endRef as RefObject<T>;
 }

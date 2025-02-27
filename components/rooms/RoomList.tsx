@@ -3,7 +3,7 @@
 import { useAuth } from "@/hooks/useAuth";
 import { useRooms } from "@/hooks/useRooms";
 import { useRoomActions } from "@/hooks/useRoomActions";
-import { RoomTile } from "./roomTile";
+import { RoomTile } from "./RoomTile";
 
 function RoomList() {
   const user = useAuth();
